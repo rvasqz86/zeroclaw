@@ -1,0 +1,57 @@
+# ZeroClaw Docker Compose — Coolify Edition
+#
+# Optimized for Coolify deployment. Strips directives that conflict
+# with Coolify's container management (naming, restarts, ports, resources).
+#
+# Coolify handles: container naming, restart policy, reverse proxy (Traefik/Caddy),
+# resource limits (configure via Coolify UI), and health monitoring.
+#
+# Setup in Coolify:
+#   1. Create a new Docker Compose resource
+#   2. Point to this file (or paste contents)
+#   3. Set environment variables in Coolify UI:
+#        API_KEY        = your LLM provider key
+#        PROVIDER       = openrouter (or openai, anthropic, ollama)
+#   4. Set the exposed port to 42617 in Coolify's Network settings
+#   5. Deploy
+
+services:
+  zeroclaw:
+    image: ghcr.io/zeroclaw-labs/zeroclaw:latest
+    # Or build the Debian variant (includes bash, git, curl):
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.debian
+
+    environment:
+      # Required: Your LLM provider API key (set in Coolify UI)
+      - API_KEY=${API_KEY:-}
+
+      # Optional: LLM provider (default: openrouter)
+      - PROVIDER=${PROVIDER:-openrouter}
+
+      # Required for container networking: allow bind on all interfaces
+      - ZEROCLAW_ALLOW_PUBLIC_BIND=true
+
+      # Gateway port inside the container (Coolify proxies to this)
+      - ZEROCLAW_GATEWAY_PORT=42617
+
+      # Optional: Model override
+      # - ZEROCLAW_MODEL=anthropic/claude-sonnet-4-20250514
+
+    volumes:
+      - zeroclaw-data:/zeroclaw-data
+
+    # Tell Coolify which port the service listens on (no host mapping needed)
+    expose:
+      - "42617"
+
+    healthcheck:
+      test: ["CMD", "zeroclaw", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  zeroclaw-data:

@@ -1,0 +1,23 @@
+services:
+  zeroclaw:
+    image: ghcr.io/zeroclaw-labs/zeroclaw:latest
+    container_name: zeroclaw
+    restart: unless-stopped
+    environment:
+      - API_KEY=${API_KEY}
+      - PROVIDER=${PROVIDER:-openrouter}
+      - ZEROCLAW_MODEL=${ZEROCLAW_MODEL:-openrouter/auto}
+      - ZEROCLAW_ALLOW_PUBLIC_BIND=true
+    volumes:
+      - zeroclaw-data:/zeroclaw-data
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "zeroclaw", "status"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  zeroclaw-data:
